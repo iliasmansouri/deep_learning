@@ -1,12 +1,13 @@
+import matplotlib.pyplot as plt
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-import numpy as np
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import DataLoader
+from torchvision.datasets import ImageFolder
+from torchvision import transforms
 
-import torchvision.datasets as datasets
-import matplotlib.pyplot as plt
 
 class CustomDataset(Dataset):
     def __init__(self, root_dir, transform=None):
