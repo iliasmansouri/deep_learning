@@ -9,17 +9,6 @@ from torchvision.datasets import ImageFolder
 from torchvision import transforms
 
 
-class CustomDataset(Dataset):
-    def __init__(self, root_dir, transform=None):
-        self.transform = transform
-        self.root_dir = root_dir
-    
-    def __len__(self):
-        pass
-
-    def __getitem__(self, idx):
-        pass
-    
 class AlexNet(nn.Module):
     def __init__(self):
         super(AlexNet, self).__init__()
