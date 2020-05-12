@@ -66,6 +66,20 @@ class AlexNet(nn.Module):
         out = out.view(-1, 256 * 6 * 6)
         return self.head(out)
 
+    def training_step(self, batch, batch_idx):
+        x, y = batch
+        y_hat = self(x)
+        loss = F.cross_entropy(y_hat, y)
+        tensorboard_logs = {'train_loss': loss}
+        return {'loss': loss, 'log': tensorboard_logs}
+
+    def train_dataloader(self):
+        return DataLoader(MNIST(os.getcwd(), train=True, download=True,
+                                transform=transforms.ToTensor()), batch_size=32)
+
+    def configure_optimizers(self):
+        return torch.optim.Adam(self.parameters(), lr=0.02)
+
 
 if __name__ == "__main__":
     path_to_data = "/mnt/cc9b802b-6748-4b71-b805-acbbf89c8fb0/home/ilias/Projects/data/imagenet_images"
@@ -83,31 +97,5 @@ if __name__ == "__main__":
         batch_size=128)
 
     model = AlexNet()
-    print(model)
-
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model.to(device)
-
-    criterion = nn.NLLLoss()
-    optimizer = optim.Adam(model.parameters())
-
-    epochs = 10
-    for epoch in range(epochs):
-        train_loss = 0
-        val_loss = 0
-        accuracy = 0
-
-        # Training the model
-        model.train()
-        counter = 0
-        for inputs, labels in dataloader:
-            inputs, labels = inputs.to(device), labels.to(device)
-            optimizer.zero_grad()
-            output = model.forward(inputs)
-            loss = criterion(output, labels)
-            loss.backward()
-            optimizer.step()
-            train_loss += loss.item()*inputs.size(0)
-
-            counter += 1
-            print(counter, "/", len(dataloader))
+    trainer = pl.Trainer()
+    trainer.fit(model, dataloader)
