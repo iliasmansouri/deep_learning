@@ -56,6 +56,16 @@ class AlexNet(pl.LightningModule):
         out = out.view(-1, 256 * 6 * 6)
         return self.head(out)
 
+    def prepare_data(self):
+        dataset = ImageFolder(self.path_to_data, transform=transforms.Compose([
+            transforms.CenterCrop(227),
+            transforms.ToTensor(),
+        ]))
+
+        data_split = DataSplit(dataset, shuffle=True)
+        self.train_loader, self.val_loader, self.test_loader = data_split.get_split(
+            batch_size=128, num_workers=8)
+
     def training_step(self, batch, batch_idx):
         x, y = batch
         y_hat = self(x)
@@ -64,8 +74,7 @@ class AlexNet(pl.LightningModule):
         return {'loss': loss, 'log': tensorboard_logs}
 
     def train_dataloader(self):
-        return DataLoader(MNIST(os.getcwd(), train=True, download=True,
-                                transform=transforms.ToTensor()), batch_size=32)
+        return self.train_loader
 
     def configure_optimizers(self):
         return torch.optim.Adam(self.parameters(), lr=0.02)
@@ -73,19 +82,7 @@ class AlexNet(pl.LightningModule):
 
 if __name__ == "__main__":
     path_to_data = "/mnt/cc9b802b-6748-4b71-b805-acbbf89c8fb0/home/ilias/Projects/data/imagenet_images"
-
-    dataset = ImageFolder(path_to_data, transform=transforms.Compose([
-        transforms.CenterCrop(227),
-        transforms.ToTensor(),
-    ]))
-
-    dataloader = DataLoader(
-        dataset,
-        shuffle=True,
-        pin_memory=True,
-        num_workers=8,
-        batch_size=128)
-
-    model = AlexNet()
-    trainer = pl.Trainer()
-    trainer.fit(model, dataloader)
+    model = AlexNet(path_to_data)
+    model.prepare_data()
+    trainer = pl.Trainer(gpus=1)
+    trainer.fit(model)
