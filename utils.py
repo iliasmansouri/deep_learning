@@ -3,6 +3,7 @@ from functools import lru_cache
 
 import numpy as np
 import torch
+import torch.nn as nn
 from torch.utils.data import DataLoader, Dataset
 from torch.utils.data.sampler import SubsetRandomSampler
 
@@ -68,3 +69,15 @@ class DataSplit:
         self.test_loader = torch.utils.data.DataLoader(
             self.dataset, batch_size=batch_size, sampler=self.test_sampler, shuffle=False, num_workers=num_workers)
         return self.test_loader
+
+
+def fc_layer(in_features, out_features):
+    return nn.Sequential(
+        nn.Linear(in_features, out_features),
+        nn.ReLU())
+
+
+def conv_layer(in_channels, out_channels, kernel_size, stride=1, padding=0):
+    return nn.Sequential(
+        nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding),
+        nn.ReLU())
