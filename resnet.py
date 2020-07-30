@@ -82,6 +82,29 @@ class ResNet(pl.LightningModule):
             ResBlock(512, 512, 3)
         )
 
+    def prepare_data(self):
+        dataset = ImageFolder(self.path_to_data, transform=transforms.Compose([
+            transforms.CenterCrop(227),
+            transforms.ToTensor(),
+        ]))
+
+        data_split = DataSplit(dataset, shuffle=True)
+        self.train_loader, self.val_loader, self.test_loader = data_split.get_split(
+            batch_size=10, num_workers=8)
+
+    def training_step(self, batch, batch_idx):
+        x, y = batch
+        y_hat = self(x)
+        loss = F.cross_entropy(y_hat, y)
+        tensorboard_logs = {'train_loss': loss}
+        return {'loss': loss, 'log': tensorboard_logs}
+
+    def train_dataloader(self):
+        return self.train_loader
+
+    def configure_optimizers(self):
+        return torch.optim.Adam(self.parameters(), lr=0.02)
+
 
 if __name__ == "__main__":
     path_to_data = "/mnt/cc9b802b-6748-4b71-b805-acbbf89c8fb0/home/ilias/Projects/data/imagenet_images"
