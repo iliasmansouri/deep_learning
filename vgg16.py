@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 from torchvision.datasets import ImageFolder
 from torchvision import transforms
+import torch.nn.functional as F
 
 from utils import DataSplit, conv_layer, fc_layer
 
@@ -51,7 +52,7 @@ class VGG16(pl.LightningModule):
 
         data_split = DataSplit(dataset, shuffle=True)
         self.train_loader, self.val_loader, self.test_loader = data_split.get_split(
-            batch_size=128, num_workers=8)
+            batch_size=10, num_workers=8)
 
     def training_step(self, batch, batch_idx):
         x, y = batch
