@@ -53,13 +53,14 @@ class ResNet(pl.LightningModule):
 
         self.head = nn.Sequential(
             nn.AdaptiveAvgPool2d((1, 1)),
-            fc_layer(512*7*7, self.num_classes),
+            fc_layer(5120, self.num_classes),
             nn.Softmax()
         )
 
     def forward(self, x):
         out = self.model(x)
-        out
+        out = torch.flatten(out, 1)
+        return self.head(out)
 
     def create_conv_layers(self):
         self.conv1 = conv_batch_relu_layer(3, 64, 7, 2)
