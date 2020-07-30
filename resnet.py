@@ -19,6 +19,7 @@ class ResBlock(nn.Module):
         self.layer2 = conv_batch_layer(
             out_channels, out_channels, kernel_size, stride, padding)
 
+        self.relu = nn.ReLU(inplace=True)
         self.downsample = downsample
         self.stride = stride
 
@@ -32,9 +33,7 @@ class ResBlock(nn.Module):
             residual = self.downsample(x)
 
         out += residual
-        out = self.relu(out)
-
-        return out
+        return self.relu(out)
 
 
 class ResNet(pl.LightningModule):
