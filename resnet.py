@@ -66,20 +66,20 @@ class ResNet(pl.LightningModule):
         self.conv1 = conv_batch_relu_layer(3, 64, 7, 2)
         self.conv2 = nn.Sequential(
             nn.MaxPool2d(kernel_size=3, stride=2),
-            conv_batch_relu_layer(64, 64, 3),
-            conv_batch_relu_layer(64, 64, 3)
+            ResBlock(64, 64, 3),
+            ResBlock(64, 64, 3)
         )
         self.conv3 = nn.Sequential(
-            conv_batch_relu_layer(128, 128, 3, 2),
-            conv_batch_relu_layer(128, 128, 3)
+            ResBlock(64, 128, 3, 2),
+            ResBlock(128, 128, 3)
         )
         self.conv4 = nn.Sequential(
-            conv_batch_relu_layer(256, 256, 3, 2),
-            conv_batch_relu_layer(256, 256, 3)
+            ResBlock(128, 256, 3, 2),
+            ResBlock(256, 256, 3)
         )
         self.conv5 = nn.Sequential(
-            conv_batch_relu_layer(512, 512, 3, 2),
-            conv_batch_relu_layer(512, 512, 3)
+            ResBlock(256, 512, 3, 2),
+            ResBlock(512, 512, 3)
         )
 
 
