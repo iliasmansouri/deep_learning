@@ -81,3 +81,16 @@ def conv_layer(in_channels, out_channels, kernel_size, stride=1, padding=0):
     return nn.Sequential(
         nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding),
         nn.ReLU())
+
+
+def conv_batch_relu_layer(in_channels, out_channels, kernel_size, stride=1, padding=0):
+    return nn.Sequential(
+        nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding),
+        nn.BatchNorm2d(out_channels),
+        nn.ReLU())
+
+
+def conv_batch_layer(in_channels, out_channels, kernel_size, stride=1, padding=0):
+    return nn.Sequential(
+        nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding),
+        nn.BatchNorm2d(out_channels))
