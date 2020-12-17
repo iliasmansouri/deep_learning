@@ -1,39 +1,48 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.nn.modules.flatten import Flatten
 import torch.optim as optim
 import pytorch_lightning as pl
-from utils import conv_batch_relu_layer, fc_layer, DataSplit, conv_batch_layer
+from utils import conv_batch_relu_layer, fc_layer, DataSplit, conv_batch_layer, Conv2dAuto
 from torchvision.datasets import ImageFolder
 from torchvision import transforms
 
-
 class ResBlock(nn.Module):
-    expansion = 1
-
-    def __init__(self, in_channels, out_channels, kernel_size=3, stride=1, padding=1, downsample=None):
+    def __init__(self, in_channels, out_channels, kernel_size=3, stride=1, padding=1):
         super(ResBlock, self).__init__()
 
         self.layer1 = conv_batch_relu_layer(
-            in_channels, out_channels, kernel_size, stride, padding)
+            in_channels, out_channels, kernel_size, stride, padding
+        )
         self.layer2 = conv_batch_layer(
-            out_channels, out_channels, kernel_size, stride, padding)
+            out_channels, out_channels, kernel_size, 1, padding
+        )
 
+        self.downsample = nn.Sequential(
+            Conv2dAuto(in_channels, out_channels, kernel_size, 2),
+            nn.BatchNorm2d(out_channels),
+        )
         self.relu = nn.ReLU(inplace=True)
-        self.downsample = downsample
         self.stride = stride
 
     def forward(self, x):
-        residual = x
-
+        residual = self.downsample(x) if self.stride != 1 else x
+                    
         out = self.layer1(x)
         out = self.layer2(out)
 
-        if self.downsample is not None:
-            residual = self.downsample(x)
-
         out += residual
         return self.relu(out)
+
+
+class PrintLayer(nn.Module):
+    def __init__(self):
+        super(PrintLayer, self).__init__()
+
+    def forward(self, x):
+        print("-------------here ", x.shape)
+        return x
 
 
 class ResNet(pl.LightningModule):
@@ -45,6 +54,7 @@ class ResNet(pl.LightningModule):
 
         self.model = nn.Sequential(
             self.conv1,
+            nn.MaxPool2d(kernel_size=3, stride=2, padding=1),
             self.conv2,
             self.conv3,
             self.conv4,
@@ -53,13 +63,13 @@ class ResNet(pl.LightningModule):
 
         self.head = nn.Sequential(
             nn.AdaptiveAvgPool2d((1, 1)),
-            fc_layer(5120, self.num_classes),
+            nn.Flatten(),
+            fc_layer(512, self.num_classes),
             nn.Softmax()
         )
 
     def forward(self, x):
         out = self.model(x)
-        out = torch.flatten(out, 1)
         return self.head(out)
 
     def create_conv_layers(self):
@@ -67,10 +77,10 @@ class ResNet(pl.LightningModule):
         self.conv2 = nn.Sequential(
             nn.MaxPool2d(kernel_size=3, stride=2),
             ResBlock(64, 64, 3),
-            ResBlock(64, 64, 3)
+            ResBlock(64, 64, 3),
         )
         self.conv3 = nn.Sequential(
-            ResBlock(64, 128, 3, 2),
+            ResBlock(64, 128, 3, 2), 
             ResBlock(128, 128, 3)
         )
         self.conv4 = nn.Sequential(
@@ -83,21 +93,28 @@ class ResNet(pl.LightningModule):
         )
 
     def prepare_data(self):
-        dataset = ImageFolder(self.path_to_data, transform=transforms.Compose([
-            transforms.CenterCrop(227),
-            transforms.ToTensor(),
-        ]))
+        dataset = ImageFolder(
+            self.path_to_data,
+            transform=transforms.Compose(
+                [
+                    transforms.CenterCrop(224),
+                    transforms.ToTensor(),
+                ]
+            ),
+        )
 
         data_split = DataSplit(dataset, shuffle=True)
         self.train_loader, self.val_loader, self.test_loader = data_split.get_split(
-            batch_size=10, num_workers=8)
+            batch_size=10, num_workers=8
+        )
 
     def training_step(self, batch, batch_idx):
         x, y = batch
         y_hat = self(x)
+        print("results: ", (y, y_hat))
         loss = F.cross_entropy(y_hat, y)
-        tensorboard_logs = {'train_loss': loss}
-        return {'loss': loss, 'log': tensorboard_logs}
+        tensorboard_logs = {"train_loss": loss}
+        return {"loss": loss, "log": tensorboard_logs}
 
     def train_dataloader(self):
         return self.train_loader
@@ -107,7 +124,7 @@ class ResNet(pl.LightningModule):
 
 
 if __name__ == "__main__":
-    path_to_data = "/mnt/cc9b802b-6748-4b71-b805-acbbf89c8fb0/home/ilias/Projects/data/imagenet_images"
+    path_to_data = "/media/ilias/cc9b802b-6748-4b71-b805-acbbf89c8fb04/home/ilias/Projects/ImageNet-Datasets-Downloader/data/imagenet_images"
     model = ResNet(path_to_data, 3)
     model.prepare_data()
     trainer = pl.Trainer(gpus=1)
