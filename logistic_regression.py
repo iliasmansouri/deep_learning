@@ -8,8 +8,9 @@ from sklearn.datasets import make_classification
 
 
 def create_data_set():
-    x, y = make_classification(n_features=2, n_redundant=0, n_informative=1,
-                               n_clusters_per_class=1)
+    x, y = make_classification(
+        n_features=2, n_redundant=0, n_informative=1, n_clusters_per_class=1
+    )
     return x, y
 
 
@@ -58,9 +59,9 @@ if __name__ == "__main__":
     # plot data and separating line
     plt.scatter(x[:, 0], x[:, 1], c=y, s=25, alpha=0.5)
     x_axis = np.linspace(-6, 6, 100)
-    y_axis = -(w1[0] + x_axis*w0[0][0]) / w0[0][1]
-    line_up, = plt.plot(x_axis, y_axis, 'r--', label='Separation Line')
+    y_axis = -(w1[0] + x_axis * w0[0][0]) / w0[0][1]
+    (line_up,) = plt.plot(x_axis, y_axis, "r--", label="Separation Line")
     plt.legend(handles=[line_up])
-    plt.xlabel('X(1)')
-    plt.ylabel('X(2)')
+    plt.xlabel("X(1)")
+    plt.ylabel("X(2)")
     plt.show()

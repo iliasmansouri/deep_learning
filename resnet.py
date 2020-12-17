@@ -4,9 +4,16 @@ import torch.nn.functional as F
 from torch.nn.modules.flatten import Flatten
 import torch.optim as optim
 import pytorch_lightning as pl
-from utils import conv_batch_relu_layer, fc_layer, DataSplit, conv_batch_layer, Conv2dAuto
+from utils import (
+    conv_batch_relu_layer,
+    fc_layer,
+    DataSplit,
+    conv_batch_layer,
+    Conv2dAuto,
+)
 from torchvision.datasets import ImageFolder
 from torchvision import transforms
+
 
 class ResBlock(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size=3, stride=1, padding=1):
@@ -28,7 +35,7 @@ class ResBlock(nn.Module):
 
     def forward(self, x):
         residual = self.downsample(x) if self.stride != 1 else x
-                    
+
         out = self.layer1(x)
         out = self.layer2(out)
 
@@ -58,14 +65,14 @@ class ResNet(pl.LightningModule):
             self.conv2,
             self.conv3,
             self.conv4,
-            self.conv5
+            self.conv5,
         )
 
         self.head = nn.Sequential(
             nn.AdaptiveAvgPool2d((1, 1)),
             nn.Flatten(),
             fc_layer(512, self.num_classes),
-            nn.Softmax()
+            nn.Softmax(),
         )
 
     def forward(self, x):
@@ -79,18 +86,9 @@ class ResNet(pl.LightningModule):
             ResBlock(64, 64, 3),
             ResBlock(64, 64, 3),
         )
-        self.conv3 = nn.Sequential(
-            ResBlock(64, 128, 3, 2), 
-            ResBlock(128, 128, 3)
-        )
-        self.conv4 = nn.Sequential(
-            ResBlock(128, 256, 3, 2),
-            ResBlock(256, 256, 3)
-        )
-        self.conv5 = nn.Sequential(
-            ResBlock(256, 512, 3, 2),
-            ResBlock(512, 512, 3)
-        )
+        self.conv3 = nn.Sequential(ResBlock(64, 128, 3, 2), ResBlock(128, 128, 3))
+        self.conv4 = nn.Sequential(ResBlock(128, 256, 3, 2), ResBlock(256, 256, 3))
+        self.conv5 = nn.Sequential(ResBlock(256, 512, 3, 2), ResBlock(512, 512, 3))
 
     def prepare_data(self):
         dataset = ImageFolder(

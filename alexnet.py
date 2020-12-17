@@ -24,21 +24,21 @@ class AlexNet(pl.LightningModule):
             conv_layer(256, 384, 3, padding=1),
             conv_layer(384, 384, 3, padding=1),
             conv_layer(384, 256, 3, padding=1),
-            nn.MaxPool2d(kernel_size=3, stride=2)
+            nn.MaxPool2d(kernel_size=3, stride=2),
         )
 
         self.head = nn.Sequential(
-            fc_layer(256*6*6, 4096),
-            fc_layer(4096, 4096),
-            fc_layer(4096, 3)
+            fc_layer(256 * 6 * 6, 4096), fc_layer(4096, 4096), fc_layer(4096, 3)
         )
 
-    def conv_layer_with_LRN(self, in_channels, out_channels, kernel_size, stride=1, padding=0):
+    def conv_layer_with_LRN(
+        self, in_channels, out_channels, kernel_size, stride=1, padding=0
+    ):
         return nn.Sequential(
             nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding),
             nn.ReLU(),
             nn.LocalResponseNorm(size=5, alpha=0.0001, beta=0.75, k=2),
-            nn.MaxPool2d(kernel_size=3, stride=2)
+            nn.MaxPool2d(kernel_size=3, stride=2),
         )
 
     def forward(self, x):
@@ -47,21 +47,27 @@ class AlexNet(pl.LightningModule):
         return self.head(out)
 
     def prepare_data(self):
-        dataset = ImageFolder(self.path_to_data, transform=transforms.Compose([
-            transforms.CenterCrop(227),
-            transforms.ToTensor(),
-        ]))
+        dataset = ImageFolder(
+            self.path_to_data,
+            transform=transforms.Compose(
+                [
+                    transforms.CenterCrop(227),
+                    transforms.ToTensor(),
+                ]
+            ),
+        )
 
         data_split = DataSplit(dataset, shuffle=True)
         self.train_loader, self.val_loader, self.test_loader = data_split.get_split(
-            batch_size=128, num_workers=8)
+            batch_size=128, num_workers=8
+        )
 
     def training_step(self, batch, batch_idx):
         x, y = batch
         y_hat = self(x)
         loss = F.cross_entropy(y_hat, y)
-        tensorboard_logs = {'train_loss': loss}
-        return {'loss': loss, 'log': tensorboard_logs}
+        tensorboard_logs = {"train_loss": loss}
+        return {"loss": loss, "log": tensorboard_logs}
 
     def train_dataloader(self):
         return self.train_loader
@@ -71,7 +77,7 @@ class AlexNet(pl.LightningModule):
 
 
 if __name__ == "__main__":
-    path_to_data = "/mnt/cc9b802b-6748-4b71-b805-acbbf89c8fb0/home/ilias/Projects/data/imagenet_images"
+    path_to_data = "/media/ilias/cc9b802b-6748-4b71-b805-acbbf89c8fb04/home/ilias/Projects/ImageNet-Datasets-Downloader/data/imagenet_images"
     model = AlexNet(path_to_data)
     model.prepare_data()
     trainer = pl.Trainer(gpus=1)

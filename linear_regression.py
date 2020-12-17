@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 def create_data_set():
     x = np.arange(100, dtype=np.float32)
-    y = .4 * x + 3
+    y = 0.4 * x + 3
     x = x.reshape(-1, 1)
     y = y.reshape(-1, 1)
     return x, y
@@ -51,7 +51,7 @@ if __name__ == "__main__":
 
     # Plot the graph
     predicted = model(torch.from_numpy(x)).detach().numpy()
-    plt.plot(x, y, 'ro', label='Original data')
-    plt.plot(x, predicted, label='Fitted line')
+    plt.plot(x, y, "ro", label="Original data")
+    plt.plot(x, predicted, label="Fitted line")
     plt.legend()
     plt.show()

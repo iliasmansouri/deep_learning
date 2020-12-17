@@ -16,27 +16,23 @@ class VGG16(pl.LightningModule):
         self.base_net = nn.Sequential(
             conv_layer(3, 64, 3, 1, 1),
             nn.MaxPool2d(2, 2),
-
             conv_layer(64, 128, 3, 1, 1),
             nn.MaxPool2d(2, 2),
-
             conv_layer(128, 256, 3, 1, 1),
             conv_layer(256, 256, 3, 1, 1),
             nn.MaxPool2d(2, 2),
-
             conv_layer(256, 512, 3, 1, 1),
             conv_layer(512, 512, 3, 1, 1),
             nn.MaxPool2d(2, 2),
-
             conv_layer(512, 512, 3, 1, 1),
             conv_layer(512, 512, 3, 1, 1),
-            nn.MaxPool2d(2, 2)
+            nn.MaxPool2d(2, 2),
         )
         self.head = nn.Sequential(
-            fc_layer(512*7*7, 4096),
+            fc_layer(512 * 7 * 7, 4096),
             fc_layer(4096, 4096),
             fc_layer(4096, 3),
-            nn.Softmax()
+            nn.Softmax(),
         )
 
     def forward(self, x):
@@ -45,21 +41,27 @@ class VGG16(pl.LightningModule):
         return self.head(out)
 
     def prepare_data(self):
-        dataset = ImageFolder(self.path_to_data, transform=transforms.Compose([
-            transforms.CenterCrop(227),
-            transforms.ToTensor(),
-        ]))
+        dataset = ImageFolder(
+            self.path_to_data,
+            transform=transforms.Compose(
+                [
+                    transforms.CenterCrop(227),
+                    transforms.ToTensor(),
+                ]
+            ),
+        )
 
         data_split = DataSplit(dataset, shuffle=True)
         self.train_loader, self.val_loader, self.test_loader = data_split.get_split(
-            batch_size=10, num_workers=8)
+            batch_size=10, num_workers=8
+        )
 
     def training_step(self, batch, batch_idx):
         x, y = batch
         y_hat = self(x)
         loss = F.cross_entropy(y_hat, y)
-        tensorboard_logs = {'train_loss': loss}
-        return {'loss': loss, 'log': tensorboard_logs}
+        tensorboard_logs = {"train_loss": loss}
+        return {"loss": loss, "log": tensorboard_logs}
 
     def train_dataloader(self):
         return self.train_loader
@@ -69,7 +71,7 @@ class VGG16(pl.LightningModule):
 
 
 if __name__ == "__main__":
-    path_to_data = "/mnt/cc9b802b-6748-4b71-b805-acbbf89c8fb0/home/ilias/Projects/data/imagenet_images"
+    path_to_data = "/media/ilias/cc9b802b-6748-4b71-b805-acbbf89c8fb04/home/ilias/Projects/ImageNet-Datasets-Downloader/data/imagenet_images"
     model = VGG16(path_to_data)
     model.prepare_data()
     trainer = pl.Trainer(gpus=1)
