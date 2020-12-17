@@ -3,3 +3,4 @@ data/
 .history/
 .ImageNet-Datasets-Downloader/
 .lightning_logs/
+__pycache__/
