@@ -5,12 +5,9 @@ from torch.nn.modules.flatten import Flatten
 import torch.optim as optim
 import pytorch_lightning as pl
 from models.nn_utils import (
-    conv_batch_relu_layer,
     fc_layer,
     DataSplit,
-    conv_batch_layer,
-    Conv2dAuto,
-    PrintLayer,
+    conv_layer,
 )
 from torchvision.datasets import ImageFolder
 from torchvision import transforms
@@ -20,17 +17,23 @@ class ResBlock(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size=3, stride=1, padding=1):
         super(ResBlock, self).__init__()
 
-        self.layer1 = conv_batch_relu_layer(
-            in_channels, out_channels, kernel_size, stride, padding
+        self.layer1 = conv_layer(
+            in_channels, out_channels, kernel_size, stride, padding, use_batchnorm=True
         )
-        self.layer2 = conv_batch_layer(
-            out_channels, out_channels, kernel_size, 1, padding
+        self.layer2 = conv_layer(
+            out_channels,
+            out_channels,
+            kernel_size,
+            1,
+            padding,
+            use_batchnorm=True,
+            activation="none",
         )
 
-        self.downsample = nn.Sequential(
-            Conv2dAuto(in_channels, out_channels, kernel_size, 2),
-            nn.BatchNorm2d(out_channels),
+        self.downsample = conv_layer(
+            in_channels, out_channels, kernel_size, 2, use_batchnorm=True, auto_pad=True
         )
+
         self.relu = nn.ReLU(inplace=True)
         self.stride = stride
 
@@ -72,7 +75,7 @@ class ResNet(pl.LightningModule):
         return self.head(out)
 
     def create_conv_layers(self):
-        self.conv1 = conv_batch_relu_layer(3, 64, 7, 2)
+        self.conv1 = conv_layer(3, 64, 7, 2, use_batchnorm=True)
         self.conv2 = nn.Sequential(
             nn.MaxPool2d(kernel_size=3, stride=2),
             ResBlock(64, 64, 3),
