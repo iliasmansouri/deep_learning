@@ -128,38 +128,45 @@ def fc_layer(in_features, out_features):
     return nn.Sequential(nn.Linear(in_features, out_features), nn.ReLU())
 
 
-def conv_layer(in_channels, out_channels, kernel_size, stride=1, padding=0):
-    return nn.Sequential(
-        nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding), nn.ReLU()
-    )
+# def conv_layer(in_channels, out_channels, kernel_size, stride=1, padding=0):
+#     return nn.Sequential(
+#         nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding), nn.ReLU()
+#     )
 
 
-def conv_batch_relu_layer(in_channels, out_channels, kernel_size, stride=1, padding=0):
-    return nn.Sequential(
-        nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding),
-        nn.BatchNorm2d(out_channels),
-        nn.ReLU(),
-    )
+# def conv_batch_relu_layer(in_channels, out_channels, kernel_size, stride=1, padding=0):
+#     return nn.Sequential(
+#         nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding),
+#         nn.BatchNorm2d(out_channels),
+#         nn.ReLU(),
+#     )
 
 
-def conv_batch_layer(in_channels, out_channels, kernel_size, stride=1, padding=0):
-    return nn.Sequential(
-        nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding),
-        nn.BatchNorm2d(out_channels),
-    )
+# def conv_batch_layer(in_channels, out_channels, kernel_size, stride=1, padding=0):
+#     return nn.Sequential(
+#         nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding),
+#         nn.BatchNorm2d(out_channels),
+#     )
 
 
-def _conv_layer(
+def conv_layer(
     in_channels,
     out_channels,
     kernel_size,
     stride=1,
     padding=0,
-    use_batchnorm=True,
+    auto_pad=False,
+    use_batchnorm=False,
     activation="relu",
 ):
     layer = []
-    layer.append(nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding))
+
+    if auto_pad:
+        layer.append(
+            Conv2dAuto(in_channels, out_channels, kernel_size, stride, padding)
+        )
+    else:
+        layer.append(nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding))
 
     if use_batchnorm:
         layer.append(nn.BatchNorm2d(out_channels))
