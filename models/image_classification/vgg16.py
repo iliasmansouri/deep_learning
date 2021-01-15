@@ -5,7 +5,8 @@ from torchvision.datasets import ImageFolder
 from torchvision import transforms
 import torch.nn.functional as F
 
-from models.nn_utils import DataSplit, conv_layer, fc_layer
+from models.nn_utils import conv_layer, fc_layer
+from data import DataSplit
 
 
 class VGG16(pl.LightningModule):

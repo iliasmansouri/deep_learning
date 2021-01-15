@@ -6,11 +6,11 @@ import torch.optim as optim
 import pytorch_lightning as pl
 from models.nn_utils import (
     fc_layer,
-    DataSplit,
     conv_layer,
 )
 from torchvision.datasets import ImageFolder
 from torchvision import transforms
+from data import DataSplit
 
 
 class ResBlock(nn.Module):

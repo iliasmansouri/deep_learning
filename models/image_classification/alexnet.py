@@ -9,7 +9,8 @@ from torch.utils.data import DataLoader
 from torchvision import transforms
 from torchvision.datasets import ImageFolder
 
-from models.nn_utils import DataSplit, conv_layer, fc_layer
+from models.nn_utils import conv_layer, fc_layer
+from data import DataSplit
 
 
 class AlexNet(pl.LightningModule):
