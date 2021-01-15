@@ -125,12 +125,3 @@ class DataSplit:
             num_workers=num_workers,
         )
         return self.test_loader
-
-
-coco = CocoData("/home/ilias/Documents/coco")
-cap = coco.get_train_loader()
-print("Number of samples: ", len(cap))
-img, target = cap[3]  # load 4th sample
-
-print("Image Size: ", img.size())
-print(target)
