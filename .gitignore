@@ -2,5 +2,6 @@ data/
 .vscode/
 .history/
 .ImageNet-Datasets-Downloader/
-.lightning_logs/
+lightning_logs/
+MNIST/
 __pycache__/
