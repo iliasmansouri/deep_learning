@@ -1,16 +1,8 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.nn.modules.flatten import Flatten
-import torch.optim as optim
-import pytorch_lightning as pl
-from models.nn_utils import (
-    fc_layer,
-    conv_layer,
-)
-from torchvision.datasets import ImageFolder
-from torchvision import transforms
-from data import DataSplit
+from models.image_classification.abstract import ImageClassifier
+from models.nn_utils import conv_layer, fc_layer
 
 
 class ResBlock(nn.Module):
@@ -47,11 +39,13 @@ class ResBlock(nn.Module):
         return self.relu(out)
 
 
-class ResNet(pl.LightningModule):
+class ResNet(ImageClassifier):
     def __init__(self, data_handler):
-        super(ResNet, self).__init__()
-        self.num_classes = data_handler.get_num_classes()
-        self.data_handler = data_handler
+        self.loss_function = F.cross_entropy
+        self.optimizer = torch.optim.Adam
+
+        ImageClassifier.__init__(self, data_handler, self.loss_function, self.optimizer)
+
         self.create_conv_layers()
 
         self.model = nn.Sequential(
@@ -84,24 +78,3 @@ class ResNet(pl.LightningModule):
         self.conv3 = nn.Sequential(ResBlock(64, 128, 3, 2), ResBlock(128, 128, 3))
         self.conv4 = nn.Sequential(ResBlock(128, 256, 3, 2), ResBlock(256, 256, 3))
         self.conv5 = nn.Sequential(ResBlock(256, 512, 3, 2), ResBlock(512, 512, 3))
-
-    def prepare_data(self):
-        (
-            self.train_loader,
-            self.val_loader,
-            self.test_loader,
-        ) = self.data_handler.get_split()
-
-    def training_step(self, batch, batch_idx):
-        x, y = batch
-        y_hat = self(x)
-        print("results: ", (y, y_hat))
-        loss = F.cross_entropy(y_hat, y)
-        tensorboard_logs = {"train_loss": loss}
-        return {"loss": loss, "log": tensorboard_logs}
-
-    def train_dataloader(self):
-        return self.train_loader
-
-    def configure_optimizers(self):
-        return torch.optim.Adam(self.parameters(), lr=0.02)
