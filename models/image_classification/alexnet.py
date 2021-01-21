@@ -1,24 +1,15 @@
-import logging
-
 import pytorch_lightning as pl
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import torch.optim as optim
-from torch.utils.data import DataLoader
-from torchvision import transforms
-from torchvision.datasets import ImageFolder
-
 from models.nn_utils import conv_layer, fc_layer
-from data import DataSplit
 
 
 class AlexNet(pl.LightningModule):
-    def __init__(self, path_to_data, num_classes):
+    def __init__(self, data_handler):
         super(AlexNet, self).__init__()
-        self.num_classes = num_classes
-        self.path_to_data = path_to_data
-
+        self.num_classes = data_handler.get_num_classes()
+        self.data_handler = data_handler
         self.base_net = nn.Sequential(
             self.conv_layer_with_LRN(3, 96, 11, 4),
             self.conv_layer_with_LRN(96, 256, 5, padding=2),
@@ -50,24 +41,16 @@ class AlexNet(pl.LightningModule):
         return self.head(out)
 
     def prepare_data(self):
-        dataset = ImageFolder(
-            self.path_to_data,
-            transform=transforms.Compose(
-                [
-                    transforms.CenterCrop(227),
-                    transforms.ToTensor(),
-                ]
-            ),
-        )
-
-        data_split = DataSplit(dataset, shuffle=True)
-        self.train_loader, self.val_loader, self.test_loader = data_split.get_split(
-            batch_size=128, num_workers=8
-        )
+        (
+            self.train_loader,
+            self.val_loader,
+            self.test_loader,
+        ) = self.data_handler.get_split()
 
     def training_step(self, batch, batch_idx):
         x, y = batch
         y_hat = self(x)
+
         loss = F.cross_entropy(y_hat, y)
         tensorboard_logs = {"train_loss": loss}
         return {"loss": loss, "log": tensorboard_logs}
