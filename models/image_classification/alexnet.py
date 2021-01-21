@@ -1,15 +1,17 @@
-import pytorch_lightning as pl
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from models.image_classification.abstract import ImageClassifier
 from models.nn_utils import conv_layer, fc_layer
 
 
-class AlexNet(pl.LightningModule):
+class AlexNet(ImageClassifier):
     def __init__(self, data_handler):
-        super(AlexNet, self).__init__()
-        self.num_classes = data_handler.get_num_classes()
-        self.data_handler = data_handler
+        self.loss_function = F.cross_entropy
+        self.optimizer = torch.optim.Adam
+
+        ImageClassifier.__init__(self, data_handler, self.loss_function, self.optimizer)
+
         self.base_net = nn.Sequential(
             self.conv_layer_with_LRN(3, 96, 11, 4),
             self.conv_layer_with_LRN(96, 256, 5, padding=2),
@@ -39,24 +41,3 @@ class AlexNet(pl.LightningModule):
         out = self.base_net(x)
         out = out.view(-1, 256 * 6 * 6)
         return self.head(out)
-
-    def prepare_data(self):
-        (
-            self.train_loader,
-            self.val_loader,
-            self.test_loader,
-        ) = self.data_handler.get_split()
-
-    def training_step(self, batch, batch_idx):
-        x, y = batch
-        y_hat = self(x)
-
-        loss = F.cross_entropy(y_hat, y)
-        tensorboard_logs = {"train_loss": loss}
-        return {"loss": loss, "log": tensorboard_logs}
-
-    def train_dataloader(self):
-        return self.train_loader
-
-    def configure_optimizers(self):
-        return torch.optim.Adam(self.parameters(), lr=0.02)
