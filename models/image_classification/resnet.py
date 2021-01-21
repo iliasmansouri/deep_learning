@@ -48,10 +48,10 @@ class ResBlock(nn.Module):
 
 
 class ResNet(pl.LightningModule):
-    def __init__(self, path_to_data, num_classes):
+    def __init__(self, data_handler):
         super(ResNet, self).__init__()
-        self.num_classes = num_classes
-        self.path_to_data = path_to_data
+        self.num_classes = data_handler.get_num_classes()
+        self.data_handler = data_handler
         self.create_conv_layers()
 
         self.model = nn.Sequential(
@@ -86,20 +86,11 @@ class ResNet(pl.LightningModule):
         self.conv5 = nn.Sequential(ResBlock(256, 512, 3, 2), ResBlock(512, 512, 3))
 
     def prepare_data(self):
-        dataset = ImageFolder(
-            self.path_to_data,
-            transform=transforms.Compose(
-                [
-                    transforms.CenterCrop(224),
-                    transforms.ToTensor(),
-                ]
-            ),
-        )
-
-        data_split = DataSplit(dataset, shuffle=True)
-        self.train_loader, self.val_loader, self.test_loader = data_split.get_split(
-            batch_size=10, num_workers=8
-        )
+        (
+            self.train_loader,
+            self.val_loader,
+            self.test_loader,
+        ) = self.data_handler.get_split()
 
     def training_step(self, batch, batch_idx):
         x, y = batch
