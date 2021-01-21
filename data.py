@@ -6,10 +6,13 @@ import numpy as np
 from torch.utils.data import DataLoader
 from torch.utils.data.sampler import SubsetRandomSampler
 from torchvision import datasets, transforms
+from torchvision.datasets.folder import ImageFolder
 
 
 class CocoData:
-    def __init__(self, coco_path):
+    def __init__(
+        self, coco_path, transform_fn, batch_size=4, shuffle=True, num_workers=8
+    ):
         self.coco_path = coco_path
         self.train_path = os.path.join(self.coco_path, "train2017")
         self.test_path = os.path.join(self.coco_path, "test2017")
@@ -19,25 +22,52 @@ class CocoData:
             "annotations_trainval2017/annotations/captions_train2017.json",
         )
 
+        self.batch_size = batch_size
+        self.shuffle = shuffle
+        self.num_workers = num_workers
+        self.transform = transform_fn
+
     def get_train_loader(self):
-        return datasets.CocoDetection(
-            root=self.train_path,
-            annFile=self.annotation_path,
-            transform=transforms.ToTensor(),
+        return DataLoader(
+            datasets.CocoDetection(
+                root=self.train_path,
+                annFile=self.annotation_path,
+                transform=self.transform,
+            ),
+            batch_size=self.batch_size,
+            shuffle=self.shuffle,
+            num_workers=self.num_workers,
         )
 
     def get_test_loader(self):
-        return datasets.CocoDetection(
-            root=self.test_path,
-            annFile=self.annotation_path,
-            transform=transforms.ToTensor(),
+        return DataLoader(
+            datasets.CocoDetection(
+                root=self.test_path,
+                annFile=self.annotation_path,
+                transform=self.transform,
+            ),
+            batch_size=self.batch_size,
+            shuffle=self.shuffle,
+            num_workers=self.num_workers,
         )
 
     def get_validation_loader(self):
-        return datasets.CocoDetection(
-            root=self.validation_path,
-            annFile=self.annotation_path,
-            transform=transforms.ToTensor(),
+        return DataLoader(
+            datasets.CocoDetection(
+                root=self.validation_path,
+                annFile=self.annotation_path,
+                transform=self.transform,
+            ),
+            batch_size=self.batch_size,
+            shuffle=self.shuffle,
+            num_workers=self.num_workers,
+        )
+
+    def get_split(self):
+        return (
+            self.get_train_loader(),
+            self.get_validation_loader(),
+            self.get_test_loader(),
         )
 
 
@@ -125,3 +155,58 @@ class DataSplit:
             num_workers=num_workers,
         )
         return self.test_loader
+
+
+class DataHandler:
+    def __init__(
+        self,
+        path,
+        data_type,
+        augmentation=None,
+        batch_size=4,
+        shuffle=True,
+        num_workers=8,
+    ):
+        self.path = path
+        self.data_type = data_type
+        self.transform = transforms.Compose(
+            [transforms.CenterCrop(227), transforms.ToTensor()]
+        )
+        self.augmentation = augmentation
+
+        self.batch_size = batch_size
+        self.shuffle = shuffle
+        self.num_workers = num_workers
+
+        self.dataset = self.get_dataset()
+
+    def get_split(self):
+        if self.data_type == "coco":
+            return self.dataset.get_split()
+        elif self.data_type == "image_folder":
+            return DataSplit(self.dataset, shuffle=True).get_split(
+                batch_size=128, num_workers=8
+            )
+
+    def get_dataset(self):
+        if self.data_type == "coco":
+            return CocoData(
+                self.path,
+                self.transform,
+                self.batch_size,
+                self.shuffle,
+                self.num_workers,
+            )
+        elif self.data_type == "image_folder":
+            return ImageFolder(self.path, self.transform)
+        else:
+            raise ValueError(
+                "Data type can be either coco or image_folder but is: %s",
+                self.data_type,
+            )
+
+    def get_num_classes(self):
+        if self.data_type == "coco":
+            return 80
+        if self.data_type == "image_folder":
+            return 3
